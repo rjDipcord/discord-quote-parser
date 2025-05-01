@@ -72,14 +72,19 @@ async def on_ready():
         for match in matches:
             quote, user_id, fallback_quote = match
 
-            # Determine the author: either from the regex or from the message author
-            if user_id:
-                user = await client.fetch_user(int(user_id))
-            else:
-                user = message.author  # Use the message author as fallback
+            quote_text = quote if quote else fallback_quote
 
-            author = str(user)
-            quote_text = quote if quote else fallback_quote  # Use the matched quote or fallback quote
+            if user_id:  # If a user mention was found
+                try:
+                    member = guild.get_member(int(user_id)) or await guild.fetch_member(int(user_id))
+                    if member:
+                        author = f"{member.name}#{member.discriminator}"
+                    else:
+                        author = f"<@{user_id}>"
+                except discord.NotFound:
+                    author = f"<@{user_id}>"
+            else:
+                author = f"{message.author.name}#{message.author.discriminator}"
 
             print(f"   ✅ Match: '{quote_text}' by {author}")
             data.append({
