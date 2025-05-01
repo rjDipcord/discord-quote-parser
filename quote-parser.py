@@ -43,6 +43,10 @@ data = []
 start_dt = datetime.combine(START_DATE, time.min).replace(tzinfo=timezone.utc)
 end_dt = datetime.combine(END_DATE, time.max).replace(tzinfo=timezone.utc)
 
+def format_user(user):
+    # Only include discriminator if it's not "0"
+    return user.name if user.discriminator == "0" else f"{user.name}#{user.discriminator}"
+
 @client.event
 async def on_ready():
     print(f'✅ Logged in as {client.user}')
@@ -89,13 +93,13 @@ async def on_ready():
             try:
                 member = guild.get_member(int(user_id))
                 if member:
-                    author = f"{member.name}#{member.discriminator}"
+                    author = format_user(member)
                     print(f"   ✅ Found in guild: {author}")
                 else:
                     print(f"   ⚠️ Not found in guild. Trying global fetch...")
                     try:
                         user = await client.fetch_user(int(user_id))
-                        author = f"{user.name}#{user.discriminator}"
+                        author = format_user(user)
                         print(f"   ✅ Found globally: {author}")
                     except discord.NotFound:
                         author = f"<@{user_id}>"
@@ -104,7 +108,7 @@ async def on_ready():
                 author = f"<@{user_id}>"
                 print(f"   ❌ Exception during user resolution: {e}")
         else:
-            author = f"{message.author.name}#{message.author.discriminator}"
+            author = format_user(message.author)
             print(f"   🔄 No mention found. Defaulting to message author: {author}")
 
         if quote:
