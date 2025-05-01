@@ -3,7 +3,16 @@ This is a simple python script which can be run on any Discord server through Di
 
 What you do with the resulting CSV is entirely up to you. But this script was initially created to assist in creating a Jeopardy-like game where contestants were given a quote and tasked with guessing who said it.
 
-# To run this yourself
+# How it Works
+This script rquires a specific format to parse, label, and store quotes correctly. It expects a quote to be in the following format:
+
+``` "This is something someone said" ~ @This is who said it```
+
+It will still filter out quotes with similar formatting, but the format cannot stray very far from [Quote][Handle]. If it does, the regex may not reliably detect it, or it may match on something that isn't a quote at all.
+
+I can't gurantee this script will work for you if the quotes are formatted differently than described above. If you need it modified, write a detailed issue report and I can try to make it work for you. Otherwise, have your users change their formatting to match.
+
+# To Run this Yourself
 
 >[!NOTE]
 >This script has been tested with python 3.11.6. Your experience may be different on other versions.
