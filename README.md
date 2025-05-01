@@ -31,3 +31,6 @@ Name it whatever you like.
 7. Run the script.
 
 8. Profit???
+
+>[!NOTE]
+>Full disclosure, this script was hardcore _vibe coded_. It works, but it's not very efficient. I did my best to condense it down and make it less resource heavy. If you have ideas to improve it, consider submitting a PR ❤️.
