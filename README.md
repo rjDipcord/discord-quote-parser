@@ -15,6 +15,7 @@ What you do with the resulting CSV is entirely up to you. But this script was in
 Name it whatever you like.
 
 2. In the left pane, you will need to navigate to the Bot panel and assign some permissions, as well as find your Bot Token.
+
 ![image](https://github.com/user-attachments/assets/ac014a18-a44f-4e6b-ba2d-a13d51797ddf)
 
 3. Here, be sure to enable ```Server Members``` and ```Message Content``` intents. They are needed for the bot to read messages and automatically convert user IDs to their member discriminator.
