@@ -14,7 +14,7 @@ I can't gurantee this script will work for you if the quotes are formatted diffe
 
 # To Run this Yourself
 
->[!NOTE]
+>[!IMPORTANT]
 >This script has been tested with python 3.11.6. Your experience may be different on other versions.
 >This script also has dependencies for ```discord.py``` and ```pandas```. They can be installed with ```pip install discord.py pandas```
 
