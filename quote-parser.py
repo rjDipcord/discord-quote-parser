@@ -2,6 +2,7 @@ import discord
 import re
 import pandas as pd
 import asyncio
+from datetime import datetime, date, time, timezone
 
 TOKEN = "YOUR BOT TOKEN GOES HERE"
 GUILD_ID = 1234567890  # Replace with your server ID
@@ -22,15 +23,25 @@ GUILD_ID = 1247043930646114385
 CHANNEL_ID = 1247045931149294509 
 '''
 
+# Define your inclusive date range (YYYY-MM-DD)
+# The script will ONLY fetch messages that fall between these two dates.
+START_DATE = date(2025, 1, 1)
+END_DATE = date(2025, 12, 31)
+
 intents = discord.Intents.default()
 intents.messages = True
-intents.message_content = True  # Make sure this intent is enabled
+intents.message_content = True 
+intents.members = True
 client = discord.Client(intents=intents)
 
-# Matches: "some text" @User (mention) OR "some text" (without @mention)
-quote_pattern = re.compile(r'"(.+?)"\s+<@!?(\d+)>|"(.*?)"')
+# Adjusted regex to match both formats
+quote_pattern = re.compile(r'"(.*?)"\s*[\n\r]*[~\-–—]*\s*<@!?(\d+)>', re.DOTALL)
 
 data = []
+
+# Convert the dates provided to a format we can feed to the API.
+start_dt = datetime.combine(START_DATE, time.min).replace(tzinfo=timezone.utc)
+end_dt = datetime.combine(END_DATE, time.max).replace(tzinfo=timezone.utc)
 
 @client.event
 async def on_ready():
@@ -48,51 +59,64 @@ async def on_ready():
         return
 
     print(f"🔍 Scanning channel '{channel.name}' in server '{guild.name}' ({guild.id}/{channel.id})")
+    print(f"🔍 Scanning messages after {start_dt} and before {end_dt}")
 
     message_count = 0
     match_count = 0
 
-    async for message in channel.history(limit=None, oldest_first=True):
+    async for message in channel.history(limit=None, oldest_first=True, after=start_dt, before=end_dt):
         message_count += 1
         content = message.content.strip()
-
-        # Verbose logging
-        print(f"\n📨 Message {message_count} by {message.author}")
+        print(f"\n📨 Message {message_count}")
         print(f"🕒 Date: {message.created_at}")
-        print(f"🔤 content: {repr(content)}")
+        print(f"🔤 content: {content}")
 
-        if not content:
-            print("   ⚠️ Skipping empty message.")
-            continue
+        quote = None
+        author = None
+        user_id = None
 
-        matches = quote_pattern.findall(content)
-        if not matches:
-            print("   ⛔ No matches in this message.")
-        
-        for match in matches:
-            quote, user_id, fallback_quote = match
+        match = re.search(r'"(.*?)"\s*[\n\r]*[~\-–—]*\s*<@!?(\d+)>', content, re.DOTALL)
+        if match:
+            quote = match.group(1).strip()
+            user_id = match.group(2)
+            print(f"   ✅ Regex matched: quote='{quote}' | user_id={user_id}")
+        else:
+            print(f"   ⚠️ Regex did not match this message.")
 
-            quote_text = quote if quote else fallback_quote
-
-            if user_id:  # If a user mention was found
-                try:
-                    member = guild.get_member(int(user_id)) or await guild.fetch_member(int(user_id))
-                    if member:
-                        author = f"{member.name}#{member.discriminator}"
-                    else:
+        # Resolve the author
+        if user_id:
+            print(f"   🔍 Resolving user ID: {user_id}")
+            try:
+                member = guild.get_member(int(user_id))
+                if member:
+                    author = f"{member.name}#{member.discriminator}"
+                    print(f"   ✅ Found in guild: {author}")
+                else:
+                    print(f"   ⚠️ Not found in guild. Trying global fetch...")
+                    try:
+                        user = await client.fetch_user(int(user_id))
+                        author = f"{user.name}#{user.discriminator}"
+                        print(f"   ✅ Found globally: {author}")
+                    except discord.NotFound:
                         author = f"<@{user_id}>"
-                except discord.NotFound:
-                    author = f"<@{user_id}>"
-            else:
-                author = f"{message.author.name}#{message.author.discriminator}"
+                        print(f"   ❌ User not found globally. Using raw ID: {author}")
+            except Exception as e:
+                author = f"<@{user_id}>"
+                print(f"   ❌ Exception during user resolution: {e}")
+        else:
+            author = f"{message.author.name}#{message.author.discriminator}"
+            print(f"   🔄 No mention found. Defaulting to message author: {author}")
 
-            print(f"   ✅ Match: '{quote_text}' by {author}")
+        if quote:
+            print(f"   ✅ Final Match: '{quote}' by {author}")
             data.append({
-                "quote": quote_text,
+                "quote": quote,
                 "author": author,
                 "date": message.created_at.isoformat()
             })
             match_count += 1
+        else:
+            print(f"   ⚠️ Skipping message: No quote found.")
 
     print(f"\n🔎 Finished scanning {message_count} messages.")
     print(f"📝 Found {match_count} quotes. Writing to CSV...")
@@ -102,5 +126,6 @@ async def on_ready():
     print("✅ Saved to quotes.csv")
 
     await client.close()
+
 
 client.run(TOKEN)
